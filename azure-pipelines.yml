@@ -1,0 +1,37 @@
+trigger:
+  branches:
+    include:
+      - stage  # Se activa solo con merges a 'stage'
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '16.x'  # Usa la versión que prefieras
+    displayName: 'Instalar Node.js'
+
+  - script: |
+      npm install
+      npm run build
+    displayName: 'Instalar dependencias y compilar'
+
+  - task: CopyFiles@2
+    inputs:
+      contents: '**'
+      targetFolder: '$(Build.ArtifactStagingDirectory)'
+    displayName: 'Preparar archivos para despliegue'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: 'drop'
+    displayName: 'Publicar artefactos'
+
+  - task: AzureWebApp@1
+    inputs:
+      azureSubscription: '<Nombre_de_tu_conexión_de_Azure>'
+      appName: '<Nombre_de_tu_App_Service>'
+      package: '$(System.DefaultWorkingDirectory)/**/*.zip'
+    displayName: 'Desplegar a Azure'
